@@ -6,6 +6,8 @@ import pydobot
 import sys
 from BlocAlgo.HanoiIterative import HanoiIterative
 from BlocRobot.Filter_pydobot import FilterPydobotLogs
+import DobotCalibrate as DobotCalibrator
+from PyQt6.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QLabel
 
 H_PALET0   = -80
 H_PALET1   = -55
@@ -35,12 +37,21 @@ class DobotControl:
         sys.stdout = FilterPydobotLogs(sys.stdout)
         self.device = pydobot.Dobot(port=self.port, verbose=True)
         self.connected = True
+        # Cible initiale
         self.home_x = home_x
         self.home_y = home_y
         self.home_z = home_z
         self.cible_x = DIST_COLONNES
         self.cible_y = 0
         self.cible_z = 0
+        self.CALIB_Y = 0
+        self.CALIB_Z = 0
+        # Va à la position home
+        self.device.home()
+        #self.calibrer_hauteur()  # Définir une nouvelle référence Z
+        
+        # Se repositionner à home après calibration
+        self.move_to_and_check(self.home_x, self.home_y, self.home_z)
         self.device.move_to(home_x, home_y, home_z, 0, True)
 
     def execute_init(self):
@@ -77,6 +88,61 @@ class DobotControl:
         except Exception as e:
             print(f"Une erreur s'est produite : {e}")
 
+    def calibrer_hauteur(self, step=5):
+        """
+        Descend progressivement jusqu'à toucher une surface pour calibrer le Z.
+        """
+        if not self.connected:
+            raise RuntimeError(self.ERROR_NOT_CONNECTED)
+
+        print("Début de la calibration en Z...")
+
+        pose = self.get_pose()
+        current_z = pose[2]
+
+        while current_z > -100:  # Limite de sécurité
+            self.device.move_to(pose[0], pose[1], current_z - step, 0, True)
+            time.sleep(0.2)  # Laisser le temps au mouvement
+            
+            new_pose = self.get_pose()
+            current_z = new_pose[2]
+            
+            if self.detect_contact():
+                print(f"Contact détecté à Z={current_z}. Réglage de la référence.")
+                self.home_z = current_z
+                return
+        
+        print("Aucune surface détectée dans la plage définie.")
+
+    def detect_contact(self):
+        """
+        Détecte le contact avec une surface.
+        """
+        pose = self.get_pose()
+        return pose[2] < -90  # Seuil ajustable
+
+    def move_to_and_check(self, x, y, z, r=0, wait=True):
+        """
+        Déplace le Dobot et vérifie la position.
+        """
+        self.device.move_to(x, y, z, r, wait)
+        time.sleep(0.5)
+        
+        pose = self.get_pose()
+        if abs(pose[0] - x) > 2 or abs(pose[1] - y) > 2 or abs(pose[2] - z) > 2:
+            print(f"Déplacement incorrect : attendu ({x}, {y}, {z}), obtenu ({pose[0]}, {pose[1]}, {pose[2]})")
+        else:
+            print("Position correcte.")
+
+    def get_pose(self):
+        """
+        Obtient la position actuelle du Dobot.
+        """
+        if not self.connected:
+            raise RuntimeError(self.ERROR_NOT_CONNECTED)
+
+        return self.device.pose()
+
     def deplacer_vers_colonne_gauche(self, r=0, wait=True):
         #Déplacement vers une position spécifique.
         self.cible_x = DIST_COLONNES
@@ -111,6 +177,13 @@ class DobotControl:
         self.device.move_to(self.cible_x, self.cible_y, H_BRAS_LEVE, r, wait)
 
     def grab_pallet(self, nb_palet, r=0, wait=True, grab=True):
+        """
+        Saisir ou déposer un palet.
+        :param nb_palet: Nombre de palets à saisir ou déposer.
+        :param r: Angle de rotation.
+        :param wait: Attendre la fin du mouvement.
+        :param grab: True pour saisir, False pour déposer.
+        """
         print(f"Nombre de palets à saisir : {nb_palet}")
         #Saisir un palet.
         if(grab == False):
@@ -121,13 +194,13 @@ class DobotControl:
 
         if not self.connected:
             raise RuntimeError(self.ERROR_NOT_CONNECTED)
-        self.device.move_to(self.cible_x, self.cible_y, self.cible_z, r, wait)
+        self.move_to_and_check(self.cible_x, self.cible_y, self.cible_z, r, wait)
         self.activate_ventouse(grab)
         if grab:
             print("Palet saisi")
         else:
             print("Palet déposé")
-        self.device.move_to(self.cible_x, self.cible_y, 150, r, wait)
+        self.move_to_and_check(self.cible_x, self.cible_y, 150, r, wait)
 
     def activate_ventouse(self, activate=True):
         #Activer ou désactiver la ventouse.
@@ -163,6 +236,10 @@ class DobotControl:
         self.disconnect()
 
     def deplacer_vers_axe(self,axe_id):
+        """
+        Déplace le robot vers l'axe spécifié.
+        axe_id : 1 = gauche, 2 = centre, 3 = droite
+        """
         match axe_id:
             case 1:
                 self.deplacer_vers_colonne_gauche()
@@ -175,6 +252,9 @@ class DobotControl:
         
             
     def realiser_deplacement(self, origine , destination, palets_origin_before, palets_destination_before):
+        """
+        Réalise le déplacement entre deux axes.
+        """
         self.deplacer_vers_axe(origine)
         self.grab_pallet(palets_origin_before, grab=True)
         self.deplacer_vers_axe(destination)
@@ -197,10 +277,22 @@ class DobotControl:
                 self.cible_z = H_PALET5
             case _:
                 raise ValueError(self.ERROR_INVALID_PALLET_COUNT)
+            
+    def calibrer_manuellement(self):
+        """
+        Lance la calibration manuelle du robot.
+        """
+        app = QApplication(sys.argv)
+        window = DobotCalibrator(self)
+        window.show()
+        self.CALIB_Y = self.cible_y
+        self.CALIB_Z = self.cible_z
+        sys.exit(app.exec())
 
 
 if __name__ == "__main__":
     robot = DobotControl()
+    robot.calibrer_manuellement()
     print(f"Phase d'initialisation du robot...")
     robot.execute_init()
     
