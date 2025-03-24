@@ -1,9 +1,11 @@
 import sys
-from PyQt6.QtWidgets import QApplication, QWidget
-from PyQt6.QtGui import QPainter, QColor, QBrush
+
 from PyQt6.QtCore import Qt, QTimer
+from PyQt6.QtGui import QBrush, QColor, QPainter
+from PyQt6.QtWidgets import QApplication, QWidget
 
 from BlocAlgo.HanoiIterative import HanoiIterative
+
 
 class SimulationMoves(QWidget):
 
@@ -15,9 +17,19 @@ class SimulationMoves(QWidget):
         """
         super().__init__()
         self.algorithm = algorithm
-        self.tower_positions = [100, 300, 500]  # Positions des tours sur l'interface graphique
-        self.palet_widths = [80, 70, 60, 50, 40][:self.algorithm.nb_palet_camera]  # Largeur des palets
-        self.towers = {0: list(range(1, self.algorithm.nb_palet_camera + 1)), 1: [], 2: []}  # État initial des tours
+        self.tower_positions = [
+            100,
+            300,
+            500,
+        ]  # Positions des tours sur l'interface graphique
+        self.palet_widths = [80, 70, 60, 50, 40][
+            : self.algorithm.nb_palet_camera
+        ]  # Largeur des palets
+        self.towers = {
+            0: list(range(1, self.algorithm.nb_palet_camera + 1)),
+            1: [],
+            2: [],
+        }  # État initial des tours
         self.index = 0  # Indice du mouvement actuel
         self.movements = self.algorithm.get_move_matrix()  # Récupération des mouvements
 
@@ -52,9 +64,19 @@ class SimulationMoves(QWidget):
         :return: Aucun (met à jour self.towers et rafraîchit l'affichage).
         """
         if self.index < len(self.movements):
-            move_num, source, destination, palets_origin_before, palets_destination_before = self.movements[self.index]
-            self.move_palet(source - 1, destination - 1)  # Ajustement pour indexation zéro
-            print(f"Mouvement {move_num}: Tour {source} → Tour {destination} | Palets avant (Origine: {palets_origin_before}, Destination: {palets_destination_before})")
+            (
+                move_num,
+                source,
+                destination,
+                palets_origin_before,
+                palets_destination_before,
+            ) = self.movements[self.index]
+            self.move_palet(
+                source - 1, destination - 1
+            )  # Ajustement pour indexation zéro
+            print(
+                f"Mouvement {move_num}: Tour {source} → Tour {destination} | Palets avant (Origine: {palets_origin_before}, Destination: {palets_destination_before})"
+            )
             self.index += 1
             self.update()  # Redessiner la fenêtre après chaque mouvement
         else:
@@ -81,13 +103,17 @@ class SimulationMoves(QWidget):
         for i, tower in self.towers.items():
             for j, palet in enumerate(tower):
                 palet_index = palet - 1
-                if palet_index < len(self.palet_widths):  # Vérification pour éviter les erreurs d'indexation
+                if palet_index < len(
+                    self.palet_widths
+                ):  # Vérification pour éviter les erreurs d'indexation
                     painter.setBrush(QBrush(QColor(0, 0, 255)))  # palets en bleu
                     painter.drawRect(
-                        self.tower_positions[i] - self.palet_widths[palet_index] // 2, 
-                        280 - j * 20, 
-                        self.palet_widths[palet_index], 20
+                        self.tower_positions[i] - self.palet_widths[palet_index] // 2,
+                        280 - j * 20,
+                        self.palet_widths[palet_index],
+                        20,
                     )
+
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)

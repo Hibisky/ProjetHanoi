@@ -35,10 +35,24 @@ installation de poetry
 ## Dependencies
 
 Caméra :
-opencv-python
+- opencv-python
+- numpy 
+
+Robot:
+- pydobot
+- pyserial
+
+Interface:
+- PyQt6
 
 ## Getting Started
 
+Installer un environnement virtuel ou installer toutes les dependances logiciels en local.
+Nous vous recommandons poetry 
+ ```bash
+    poetry init
+    poetry add requirements.txt 
+```
 ### Setup
 
 
@@ -64,23 +78,74 @@ opencv-python
 ## Architecture
 
 ```
-uwb_mqtt/
+PROJETHANOI/
 ├── __init__.py
-├── constants.py
-├── data.py
-├── data_raw_distance.py
-├── db/
+├── BlocAlgo/
 │   ├── __init__.py
-│   └── init_db.py
-├── manager.py
-├── mqtt_manager.py
-├── position_calculator.py
-└── visualization.py
+│   └── HanoiIterative.py
+├── BlocRobot/
+│   ├── __init__.py
+│   └── DobotControl.py
+│   └── Filter_pydobot.py
+│   └── requirements.py
+├── BlocVision/
+│   ├── __init__.py
+│   └── DetectionInterface.py
+│   └── SimulationMoves.py
+│   └── requirements.py
+├── BlocVision/
+│   ├── __init__.py
+│   └── CameraProcessor.py
+│   └── requirements.py
+├── Tests/
+│   └── TestRobot.py
+├── detections/
+├── main.py
+├── Makefile
+├── README.md
 ```
 
 ## Structure diagram 
 
 graph TD;
+    
+    subgraph Vision
+        A[CameraProcessor] -->|Capture image| B[Détection disques]
+        B -->|Envoie nombre disques| C[DetectionInterface]
+    end
+    
+    subgraph Interface Utilisateur
+        C -->|Validation utilisateur| D[Nombre de disques validé]
+    end
+    
+    subgraph Algorithme
+        D -->|Entrée| E[HanoiIterative]
+        E -->|Génère séquence mouvements| F[SimulationMoves]
+    end
+    
+    subgraph Simulation
+        F -->|Affichage visuel| G[Utilisateur]
+    end
+    
+    subgraph Robotique
+        E -->|Liste mouvements| H[DobotControl]
+        H -->|Exécute déplacements| I[Manipulation physique]
+    end
+    
+    subgraph Programme Principal
+        Start((Début)) -->|Init robot| H
+        Start -->|Init caméra| A
+        Start -->|Capture image| A
+        A -->|Analyse tour| B
+        B -->|Vérification utilisateur| C
+        C -->|Confirme disques| D
+        D -->|Lance algorithme| E
+        E -->|Envoie mouvements| F
+        F -->|Affichage simulation| G
+        E -->|Envoie commandes| H
+        H -->|Déplacement terminé| End((Fin))
+    end
+
 
 
 ## Devices

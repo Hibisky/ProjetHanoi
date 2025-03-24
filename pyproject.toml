@@ -18,6 +18,8 @@ opencv-contrib-python = "^4.11.0.86"
 # Retirer la dépendance "tk" car Tkinter fait partie de Python
 pyqt6 = "^6.8.1"
 pygame = "^2.6.1"
+black = "^25.1.0"
+isort = "^6.0.1"
 
 [build-system]
 requires = ["poetry-core"]

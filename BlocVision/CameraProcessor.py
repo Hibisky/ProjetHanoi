@@ -1,16 +1,19 @@
+import os
+import time
+
 import cv2
 import numpy as np
-import time
-import os
 
 # Paramètres pour le traitement des palets
 CIRCULARITY_MIN = 0.8  # Seuil de circularité pour considérer une forme comme un palet
-AREA_MIN = 100         # Taille minimale d'un palet pour éviter les faux positifs
+AREA_MIN = 100  # Taille minimale d'un palet pour éviter les faux positifs
+
 
 class CameraProcessor:
     """
     Classe pour capturer une image depuis la caméra et détecter les palets présents dans l'image.
     """
+
     def __init__(self, camera_index=0):
         """
         Initialise la caméra.
@@ -33,13 +36,13 @@ class CameraProcessor:
                 print("Erreur : Impossible de capturer une image valide.")
                 cap.release()
                 return None
-        
+
         cap.release()
-        
+
         if not np.any(frame):
             print("Erreur : L'image capturée est vide ou noire.")
             return None
-        
+
         return frame
 
     def detect_discs(self, frame, detection_id):
@@ -59,19 +62,22 @@ class CameraProcessor:
         blurred = cv2.GaussianBlur(gray, (5, 5), 0)
         cv2.imwrite(os.path.join(folder_name, "step_2_blur.png"), blurred)
 
-        thresholded = cv2.adaptiveThreshold(blurred, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
-                                            cv2.THRESH_BINARY_INV, 11, 2)
+        thresholded = cv2.adaptiveThreshold(
+            blurred, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, 11, 2
+        )
         cv2.imwrite(os.path.join(folder_name, "step_3_threshold.png"), thresholded)
-        
-        contours, _ = cv2.findContours(thresholded, cv2.RETR_CCOMP, cv2.CHAIN_APPROX_SIMPLE)
-        
+
+        contours, _ = cv2.findContours(
+            thresholded, cv2.RETR_CCOMP, cv2.CHAIN_APPROX_SIMPLE
+        )
+
         contour_frame = frame.copy()
         cv2.drawContours(contour_frame, contours, -1, (0, 255, 0), 2)
         cv2.imwrite(os.path.join(folder_name, "step_4_contours.png"), contour_frame)
 
         palets = []
         valid_contours_frame = frame.copy()
-        
+
         for contour in contours:
             if self.classify_contour(contour):
                 (x, y), radius = cv2.minEnclosingCircle(contour)
@@ -79,12 +85,15 @@ class CameraProcessor:
                 cv2.drawContours(valid_contours_frame, [contour], -1, (0, 255, 0), 2)
             else:
                 cv2.drawContours(valid_contours_frame, [contour], -1, (0, 0, 255), 2)
-        
-        cv2.imwrite(os.path.join(folder_name, "step_5_validated_contours.png"), valid_contours_frame)
-        
+
+        cv2.imwrite(
+            os.path.join(folder_name, "step_5_validated_contours.png"),
+            valid_contours_frame,
+        )
+
         palets = sorted(palets, key=lambda d: d[0])
         return len(palets), palets
-    
+
     def classify_contour(self, contour):
         """
         Vérifie si un contour correspond aux critères d'un palet valide.
@@ -93,12 +102,13 @@ class CameraProcessor:
         """
         area = cv2.contourArea(contour)
         perimeter = cv2.arcLength(contour, True)
-        
+
         if area < AREA_MIN or perimeter == 0:
             return False
-        
-        circularity = (4 * np.pi * area) / (perimeter ** 2)
+
+        circularity = (4 * np.pi * area) / (perimeter**2)
         return circularity > CIRCULARITY_MIN
+
 
 if __name__ == "__main__":
     processor = CameraProcessor()

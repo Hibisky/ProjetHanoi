@@ -1,33 +1,37 @@
 #!/usr/bin/env python
 
-import time
-from serial.tools import list_ports
-import pydobot
 import sys
+import time
+
+import pydobot
+from serial.tools import list_ports
+
 from BlocAlgo.HanoiIterative import HanoiIterative
 from BlocRobot.Filter_pydobot import FilterPydobotLogs
 
-H_PALET0   = -80
-H_PALET1   = -55
-H_PALET2   = -30
-H_PALET3   = -5
-H_PALET4   = 20
-H_PALET5   = 50
+H_PALET0 = -80
+H_PALET1 = -55
+H_PALET2 = -30
+H_PALET3 = -5
+H_PALET4 = 20
+H_PALET5 = 50
 AXE_DROITE = 150
 AXE_GAUCHE = -150
 AXE_CENTRE = 0
 H_BRAS_LEVE = 150
 DIST_COLONNES = 220
+
+
 class DobotControl:
-    
+
     def __init__(self, home_x=220, home_y=0, home_z=100):
-        #Initialise le contrôle Dobot.
+        # Initialise le contrôle Dobot.
         self.ERROR_NOT_CONNECTED = "Le Dobot n'est pas connecte."
         self.ERROR_INVALID_PALLET_COUNT = "Nombre de palets invalide"
         available_ports = list_ports.comports()
         if not available_ports:
             raise RuntimeError("Aucun port disponible pour connecter le Dobot.")
-        print(f'available ports: {[x.device for x in available_ports]}')
+        print(f"available ports: {[x.device for x in available_ports]}")
 
         self.port = available_ports[4].device  # Choisir le port approprié
         print(f"Connexion au port : {self.port}")
@@ -44,17 +48,17 @@ class DobotControl:
         self.device.move_to(home_x, home_y, home_z, 0, True)
 
     def execute_init(self):
-        
-        #Exécute les mouvements et opérations nécessaires pour chaque position définie.
+
+        # Exécute les mouvements et opérations nécessaires pour chaque position définie.
         try:
-            for index in 0,1,2:
+            for index in 0, 1, 2:
 
                 # Mouvement au-dessus de la position
-                if(index == 0):
+                if index == 0:
                     self.deplacer_vers_colonne_droite()
                     self.grab_pallet(5, grab=True)
                     self.grab_pallet(5, grab=False)
-                if(index == 1):
+                if index == 1:
                     self.deplacer_vers_colonne_centre(0)
                     # Activer la ventouse pour ramasser
                     self.activate_ventouse(True)
@@ -62,7 +66,7 @@ class DobotControl:
                     # Désactiver la ventouse pour déposer
                     self.activate_ventouse(False)
 
-                if(index == 2):
+                if index == 2:
                     self.deplacer_vers_colonne_gauche(0)
                     # Activer la ventouse pour ramasser
                     self.activate_ventouse(True)
@@ -78,46 +82,55 @@ class DobotControl:
             print(f"Une erreur s'est produite : {e}")
 
     def deplacer_vers_colonne_gauche(self, r=0, wait=True):
-        #Déplacement vers une position spécifique.
+        # Déplacement vers une position spécifique.
         self.cible_x = DIST_COLONNES
         self.cible_y = AXE_GAUCHE
-            
+
         if not self.connected:
             raise RuntimeError(self.ERROR_NOT_CONNECTED)
 
-        print(f"Déplacement vers x={self.cible_x}, y={AXE_GAUCHE}, z={self.cible_z}, r={r}")
+        print(
+            f"Déplacement vers x={self.cible_x}, y={AXE_GAUCHE}, z={self.cible_z}, r={r}"
+        )
         self.device.move_to(self.cible_x, self.cible_y, H_BRAS_LEVE, r, wait)
 
     def deplacer_vers_colonne_centre(self, r=0, wait=True):
-        #Déplacement vers une position spécifique.
+        # Déplacement vers une position spécifique.
         self.cible_x = DIST_COLONNES
         self.cible_y = AXE_CENTRE
-            
+
         if not self.connected:
             raise RuntimeError(self.ERROR_NOT_CONNECTED)
 
-        print(f"Déplacement vers x={self.cible_x}, y={AXE_CENTRE}, z={self.cible_z}, r={r}")
+        print(
+            f"Déplacement vers x={self.cible_x}, y={AXE_CENTRE}, z={self.cible_z}, r={r}"
+        )
         self.device.move_to(self.cible_x, self.cible_y, H_BRAS_LEVE, r, wait)
-    
+
     def deplacer_vers_colonne_droite(self, r=0, wait=True):
-        #Déplacement vers une position spécifique.
-        self.cible_x = DIST_COLONNES 
-        self.cible_y = AXE_DROITE 
-        
+        # Déplacement vers une position spécifique.
+        self.cible_x = DIST_COLONNES
+        self.cible_y = AXE_DROITE
+
         if not self.connected:
             raise RuntimeError(self.ERROR_NOT_CONNECTED)
 
-        print(f"Déplacement vers x={self.cible_x}, y={AXE_DROITE}, z={self.cible_z}, r={r}")
+        print(
+            f"Déplacement vers x={self.cible_x}, y={AXE_DROITE}, z={self.cible_z}, r={r}"
+        )
         self.device.move_to(self.cible_x, self.cible_y, H_BRAS_LEVE, r, wait)
 
     def grab_pallet(self, nb_palet, r=0, wait=True, grab=True):
         print(f"Nombre de palets à saisir : {nb_palet}")
-        #Saisir un palet.
-        if(grab == False):
-            nb_palet += 1;  # Ajout du palet à déposer
+        # Saisir un palet.
+        if grab == False:
+            nb_palet += 1
+            # Ajout du palet à déposer
         self.move_vertical_switch(nb_palet)
 
-        print(f"Position actuelle : x={self.cible_x}, y={self.cible_y}, z={self.cible_z}, r={r}")
+        print(
+            f"Position actuelle : x={self.cible_x}, y={self.cible_y}, z={self.cible_z}, r={r}"
+        )
 
         if not self.connected:
             raise RuntimeError(self.ERROR_NOT_CONNECTED)
@@ -130,7 +143,7 @@ class DobotControl:
         self.device.move_to(self.cible_x, self.cible_y, 150, r, wait)
 
     def activate_ventouse(self, activate=True):
-        #Activer ou désactiver la ventouse.
+        # Activer ou désactiver la ventouse.
         if not self.connected:
             raise RuntimeError(self.ERROR_NOT_CONNECTED)
 
@@ -138,7 +151,7 @@ class DobotControl:
         print("Ventouse activee" if activate else "Ventouse désactivee")
 
     def get_pose(self):
-        #Obtenir la position actuelle du Dobot.
+        # Obtenir la position actuelle du Dobot.
         if not self.connected:
             raise RuntimeError(self.ERROR_NOT_CONNECTED)
 
@@ -147,12 +160,16 @@ class DobotControl:
         return pose
 
     def return_to_home(self):
-        #Retour a la position initiale (home).
-        print(f"Retour à la position de depart : x={self.home_x}, y={self.home_y}, z={self.home_z}")
-        self.device.move_to(self.home_x, AXE_CENTRE, self.home_z, r=0, wait=True) #axe_centre anciennement 0
+        # Retour a la position initiale (home).
+        print(
+            f"Retour à la position de depart : x={self.home_x}, y={self.home_y}, z={self.home_z}"
+        )
+        self.device.move_to(
+            self.home_x, AXE_CENTRE, self.home_z, r=0, wait=True
+        )  # axe_centre anciennement 0
 
     def disconnect(self):
-        #Deconnexion propre du Dobot.
+        # Deconnexion propre du Dobot.
         if self.connected:
             print("Deconnexion du Dobot.")
             self.device.close()
@@ -162,7 +179,7 @@ class DobotControl:
         """Destructeur pour deconnecter proprement."""
         self.disconnect()
 
-    def deplacer_vers_axe(self,axe_id):
+    def deplacer_vers_axe(self, axe_id):
         match axe_id:
             case 1:
                 self.deplacer_vers_colonne_gauche()
@@ -172,9 +189,10 @@ class DobotControl:
                 self.deplacer_vers_colonne_droite()
             case _:
                 print(f"Erreur axe_id")
-        
-            
-    def realiser_deplacement(self, origine , destination, palets_origin_before, palets_destination_before):
+
+    def realiser_deplacement(
+        self, origine, destination, palets_origin_before, palets_destination_before
+    ):
         self.deplacer_vers_axe(origine)
         self.grab_pallet(palets_origin_before, grab=True)
         self.deplacer_vers_axe(destination)
@@ -203,11 +221,19 @@ if __name__ == "__main__":
     robot = DobotControl()
     print(f"Phase d'initialisation du robot...")
     robot.execute_init()
-    
+
     print(f"Phase de résolution de la Tour de Hanoï...")
     hanoi = HanoiIterative(4)  # Initialisation avec 4 disques
 
     # Boucle pour exécuter les mouvements de la matrice
-    for coup, origine, destination, palets_origin_before, palets_destination_before in hanoi.get_move_matrix():
+    for (
+        coup,
+        origine,
+        destination,
+        palets_origin_before,
+        palets_destination_before,
+    ) in hanoi.get_move_matrix():
         print(f"Exécution du déplacement {coup}: {origine} -> {destination}")
-        robot.realiser_deplacement(origine, destination, palets_origin_before, palets_destination_before)
+        robot.realiser_deplacement(
+            origine, destination, palets_origin_before, palets_destination_before
+        )

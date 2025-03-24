@@ -1,7 +1,6 @@
 from BlocRobot.DobotControl import DobotControl
 
 
-
 class TestRobot:
 
     def testGrabPallet(self):
@@ -18,10 +17,10 @@ class TestRobot:
         robot.move_to(200, 200, 150, 0, wait=True)
         robot.return_to_home()
         robot.disconnect()
-    
+
     def testMoveToColonne(self):
         robot = DobotControl()
-        robot.execute_init()    
+        robot.execute_init()
         robot.deplacer_vers_axe(1)
         robot.deplacer_vers_axe(2)
         robot.deplacer_vers_axe(3)
@@ -30,6 +29,7 @@ class TestRobot:
 
     def testHauteur():
         print(f"Test de la hauteur")
+
 
 if __name__ == "__main__":
     test = TestRobot()
