@@ -6,7 +6,7 @@ import os
 # Paramètres pour le traitement des palets
 CIRCULARITY_MIN = 0.8   # Seuil de circularité pour considérer une forme comme un palet
 AREA_MIN = 100          # Taille minimale d'un palet pour éviter les faux positifs
-MIN_DISTANCE = 2       # Distance minimale entre deux palets pour éviter les doublons
+MIN_DISTANCE = 3        # Distance minimale entre deux palets pour éviter les doublons
 
 class CameraProcessor:
     def __init__(self, camera_index=0):
