@@ -14,19 +14,21 @@ class AnalyseAlgo:
 
     def verifier_mouvements(self, movements, nb_palet):
         """
-        Vérifie la validité des mouvements générés pour le problème de Hanoï et enregistre les erreurs dans le fichier de log.
+        Vérifie et corrige la validité des mouvements générés pour le problème de Hanoï.
+        Si une erreur est détectée, la matrice des mouvements est corrigée.
 
         Args:
-            movements: liste de tuples (move, origine, destination, nb_orig_av, nb_dest_av)
+            movements: liste de tuples (coup, origine, destination, nb_orig_av, nb_dest_av)
             nb_palet: nombre de palets total au départ
         """
-        # Initialiser les tours
+        # Initialiser les tours avec les palets au départ
         tours = {
-            1: list(range(nb_palet, 0, -1)),  # Palets de plus grand à plus petit
+            1: list(range(nb_palet, 0, -1)),  # Tour 1 commence avec tous les palets
             2: [],
             3: []
         }
 
+        corrected_movements = []
         logging.info("\n📋 Vérification des mouvements...\n")
 
         for mvt in movements:
@@ -37,20 +39,23 @@ class AnalyseAlgo:
                 error_message = f"❌ Erreur au coup {coup}:"
                 error_message += f"\n   Origine: Tour {origine} contient {len(tours[origine])} palets (attendu: {nb_orig_av})"
                 error_message += f"\n   Destination: Tour {destination} contient {len(tours[destination])} palets (attendu: {nb_dest_av})"
-                error_message += f"\n   État actuel: T1={tours[1]}, T2={tours[2]}, T3={tours[3]}\n"
-                logging.error(error_message)  # Enregistrement de l'erreur dans le log
+                logging.error(error_message)
+                continue  # Passer ce coup si erreur de nb palets
 
-            # Exécuter le déplacement
             if not tours[origine]:
-                logging.warning(f"⚠️ Coup {coup}: tentative de déplacer depuis une tour vide ({origine})\n")
+                logging.warning(f"⚠️ Coup {coup}: tentative de déplacer depuis une tour vide ({origine})")
                 continue
 
             palet = tours[origine].pop()
             if tours[destination] and palet > tours[destination][-1]:
-                logging.error(f"🚫 Coup {coup}: palet {palet} ne peut pas être placé sur {tours[destination][-1]} (Tour {destination})\n")
-            tours[destination].append(palet)
+                logging.error(f"🚫 Coup {coup}: palet {palet} ne peut pas être placé sur {tours[destination][-1]} (Tour {destination})")
+                continue
 
-        logging.info("✅ Vérification terminée.\n")
+            tours[destination].append(palet)
+            corrected_movements.append(mvt)
+
+        logging.info("✅ Vérification terminées.\n")
+        return corrected_movements
 
 
 # Exemple d'utilisation
@@ -58,15 +63,46 @@ if __name__ == "__main__":
     analyse = AnalyseAlgo()
 
     n_palet = 5
-    mouvements = [
-        (1, 1, 3, 5, 0),
-        (2, 1, 2, 4, 0),
-        (3, 2, 3, 2, 1),  # Exemple où une erreur pourrait se produire
-        (4, 1, 2, 3, 0),
-        (5, 1, 3, 2, 0),
-    ]
-    # Appel de la méthode de vérification des mouvements
-    analyse.verifier_mouvements(mouvements, n_palet)
+    mauvais_mouvements = [
+    (1, 1, 3, 5, 0),   # ✅ OK (5 va sur 3)
+    (2, 1, 2, 4, 0),   # ✅ OK (4 va sur 2)
+    (3, 3, 2, 1, 1),   # ✅ OK (1 va sur 2)
+    (4, 1, 3, 3, 0),   # ✅ OK (3 va sur 3)
+    (5, 2, 1, 2, 2),   # 🚫 Erreur : palet 1 ne peut pas aller sur 5
+    (6, 2, 3, 1, 1),   # ⚠️ Tour 2 vide après coup 5
+    (7, 1, 2, 3, 0),   # ❌ Erreur : mouvement impossible de la tour 1 vers la 2 (palet plus grand)
+    (8, 1, 2, 2, 2),   # ❌ Erreur : mauvais nb palets destination (1 palet sur 2)
+    (9, 3, 1, 2, 1),   # ✅ OK (1 retourne sur 1)
+    (10, 2, 3, 2, 1),  # 🚫 Erreur : palet 4 sur plus petit (palet 1 ou 3)
+    (11, 1, 2, 3, 1),  # ✅ OK (3 va sur 2)
+    (12, 1, 3, 2, 1),  # ✅ OK (3 va sur 3)
+    (13, 2, 3, 2, 1),  # ✅ OK (2 va sur 3)
+    (14, 1, 2, 2, 2),  # ✅ OK (5 va sur 2)
+    (15, 3, 1, 2, 2),  # ✅ OK (2 va sur 1)
+    (16, 2, 1, 1, 3),  # ✅ OK (3 retourne sur 1)
+    (17, 3, 1, 1, 3),  # ✅ OK (1 retourne sur 1)
+    (18, 2, 3, 1, 1),  # ✅ OK (1 va sur 3)
+    (19, 1, 3, 2, 1),  # ✅ OK (2 retourne sur 3)
+    (20, 1, 2, 3, 1),  # ✅ OK (5 va sur 2)
+    (21, 1, 3, 2, 2),  # 🚫 Erreur : palet plus grand que le suivant (2 va sur 3)
+    (22, 2, 3, 1, 2),  # ✅ OK (1 retourne sur 3)
+    (23, 1, 2, 1, 3),  # ❌ Mauvais mouvement de la tour 1
+    (24, 3, 1, 1, 2),  # ✅ OK (2 va sur 1)
+    (25, 2, 1, 3, 3),  # 🚫 Mauvais mouvement de la tour 2
+    (26, 1, 3, 2, 2),  # ✅ OK (2 va sur 3)
+    (27, 1, 3, 1, 2),  # ✅ OK (1 va sur 3)
+    (28, 2, 3, 1, 3),  # 🚫 Mauvais palet sur palet plus petit
+    (29, 1, 3, 2, 1),  # ✅ OK (3 retourne sur 3)
+    (30, 3, 2, 2, 2),  # ✅ OK (1 retourne sur 2)
+    (31, 2, 1, 3, 2)   # ✅ OK (palet plus petit retourne sur 1)
+]
+    
+    # Appel de la méthode pour vérifier et corriger les mouvements
+    mouvements_corriges = analyse.verifier_mouvements(mauvais_mouvements, n_palet)
+    for m in mauvais_mouvements:
+        print(m)
+    # Affichage des mouvements corrigés
+    print("Mouvements corrigés:", mouvements_corriges)
 
 
 

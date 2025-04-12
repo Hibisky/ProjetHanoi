@@ -89,4 +89,5 @@ if __name__ == "__main__":
     hanoi = HanoiIterative(n_palets)
     move = hanoi.get_move_matrix()
     hanoi.afficher_mouvements()
-    analyse.verifier_mouvements(move,n_palets)
+    correction_hanoi=analyse.verifier_mouvements(move,n_palets)
+    
