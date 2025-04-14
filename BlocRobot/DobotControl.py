@@ -20,10 +20,22 @@ AXE_GAUCHE = -150
 AXE_CENTRE = 0
 H_BRAS_LEVE = 150
 DIST_COLONNES = 220
+
+
 class DobotControl:
+    """
+    Classe pour contrôler le robot Dobot.
+    """
     
     def __init__(self, home_x=220, home_y=0, home_z=100):
-        #Initialise le contrôle Dobot.
+        """
+        Initialise le DobotControl avec les coordonnées de la position de départ.
+        :param home_x: Coordonnée x de la position de départ.
+        :param home_y: Coordonnée y de la position de départ.
+        :param home_z: Coordonnée z de la position de départ.
+        """
+        self.connected = False
+        self.device = None
         self.ERROR_NOT_CONNECTED = "Le Dobot n'est pas connecte."
         self.ERROR_INVALID_PALLET_COUNT = "Nombre de palets invalide"
         available_ports = list_ports.comports()
@@ -48,7 +60,6 @@ class DobotControl:
         self.CALIB_Z = 0
         # Va à la position home
         self.device.home()
-        #self.calibrer_hauteur()  # Définir une nouvelle référence Z
         
         # Se repositionner à home après calibration
         self.move_to_and_check(self.home_x, self.home_y, self.home_z)
@@ -64,6 +75,7 @@ class DobotControl:
                 if(index == 0):
                     self.deplacer_vers_colonne_droite()
                     self.grab_pallet(5, grab=True)
+                    time.sleep(1)
                     self.grab_pallet(5, grab=False)
                 if(index == 1):
                     self.deplacer_vers_colonne_centre(0)
@@ -87,32 +99,8 @@ class DobotControl:
 
         except Exception as e:
             print(f"Une erreur s'est produite : {e}")
-
-    def calibrer_hauteur(self, step=5):
-        """
-        Descend progressivement jusqu'à toucher une surface pour calibrer le Z.
-        """
-        if not self.connected:
-            raise RuntimeError(self.ERROR_NOT_CONNECTED)
-
-        print("Début de la calibration en Z...")
-
-        pose = self.get_pose()
-        current_z = pose[2]
-
-        while current_z > -100:  # Limite de sécurité
-            self.device.move_to(pose[0], pose[1], current_z - step, 0, True)
-            time.sleep(0.2)  # Laisser le temps au mouvement
-            
-            new_pose = self.get_pose()
-            current_z = new_pose[2]
-            
-            if self.detect_contact():
-                print(f"Contact détecté à Z={current_z}. Réglage de la référence.")
-                self.home_z = current_z
-                return
-        
-        print("Aucune surface détectée dans la plage définie.")
+            self.device.close()
+            self.connected = False
 
     def detect_contact(self):
         """
@@ -144,7 +132,11 @@ class DobotControl:
         return self.device.pose()
 
     def deplacer_vers_colonne_gauche(self, r=0, wait=True):
-        #Déplacement vers une position spécifique.
+        """
+        Déplacement vers colonne de gauche.
+        :param r: Angle de rotation.
+        :param wait: Attendre la fin du mouvement.
+        """
         self.cible_x = DIST_COLONNES
         self.cible_y = AXE_GAUCHE
             
@@ -155,7 +147,11 @@ class DobotControl:
         self.device.move_to(self.cible_x, self.cible_y, H_BRAS_LEVE, r, wait)
 
     def deplacer_vers_colonne_centre(self, r=0, wait=True):
-        #Déplacement vers une position spécifique.
+        """
+        Déplacement vers colonne de centre.
+        :param r: Angle de rotation.
+        :param wait: Attendre la fin du mouvement.
+        """
         self.cible_x = DIST_COLONNES
         self.cible_y = AXE_CENTRE
             
@@ -166,7 +162,11 @@ class DobotControl:
         self.device.move_to(self.cible_x, self.cible_y, H_BRAS_LEVE, r, wait)
     
     def deplacer_vers_colonne_droite(self, r=0, wait=True):
-        #Déplacement vers une position spécifique.
+        """
+        Déplacement vers colonne de droite.
+        :param r: Angle de rotation.
+        :param wait: Attendre la fin du mouvement.
+        """
         self.cible_x = DIST_COLONNES 
         self.cible_y = AXE_DROITE 
         
@@ -261,6 +261,9 @@ class DobotControl:
         self.grab_pallet(palets_destination_before, grab=False)
 
     def move_vertical_switch(self, nb_palet):
+        """
+        Déplace le robot verticalement en fonction du nombre de palets.
+        """
         match nb_palet:
             case 0:
                 print(f"nb palet sur axe 0 \n hauteur = ")
@@ -288,6 +291,22 @@ class DobotControl:
         self.CALIB_Y = self.cible_y
         self.CALIB_Z = self.cible_z
         sys.exit(app.exec())
+
+    def home(self):
+        """
+        Retourne le robot à la position de départ.
+        """
+        try:
+            print("Retour à la maison...")
+            self.device._send_command(command=31)
+            # self.device.send_command(pydobot.DobotCommand.HOME, 0, 0, 0, 0, 0, 0)
+        except Exception as e:
+            print(f"Erreur lors du retour à la maison : {e}")
+            self.device.home()
+        finally:
+            self.device.close()
+            self.connected = False
+        
 
 
 if __name__ == "__main__":
