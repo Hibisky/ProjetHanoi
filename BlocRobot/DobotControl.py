@@ -58,6 +58,10 @@ class DobotControl:
         self.cible_z = 0
         self.CALIB_Y = 0
         self.CALIB_Z = 0
+        # Patch si la méthode n'existe pas
+        if not hasattr(self.device, 'home'):
+            self._patch_home()
+        
         # Va à la position home
         self.device.home()
         
@@ -292,21 +296,32 @@ class DobotControl:
         self.CALIB_Z = self.cible_z
         sys.exit(app.exec())
 
-    def home(self):
+    def _patch_home(self):
         """
-        Retourne le robot à la position de départ.
+        Ajoute une méthode home à l'instance pydobot.Dobot, avec attente de fin de mouvement.
         """
-        try:
-            print("Retour à la maison...")
-            self.device._send_command(command=31)
-            # self.device.send_command(pydobot.DobotCommand.HOME, 0, 0, 0, 0, 0, 0)
-        except Exception as e:
-            print(f"Erreur lors du retour à la maison : {e}")
-            self.device.home()
-        finally:
-            self.device.close()
-            self.connected = False
-        
+        def dobot_home(_self, timeout=10):
+            """
+            Déplace le robot à la position home et attend la fin du mouvement.
+            :param timeout: Temps d'attente maximum pour le mouvement.
+            """
+            print("🏠 Exécution de la commande Home (code 31)...")
+            _self._send_command(31)
+
+            # Attente active que le robot ait terminé (polling)
+            start_time = time.time()
+            while True:
+                pose = _self.pose()
+                if abs(pose[0] - self.home_x) < 2 and abs(pose[1] - self.home_y) < 2:
+                    print("✅ Mouvement Home terminé.")
+                    break
+                if time.time() - start_time > timeout:
+                    print("⚠️ Timeout atteint, Home non confirmé.")
+                    break
+                time.sleep(0.2)  # petite pause pour éviter de spammer le port série
+
+        self.device.home = dobot_home.__get__(self.device)
+
 
 
 if __name__ == "__main__":
