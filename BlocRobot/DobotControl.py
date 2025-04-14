@@ -80,9 +80,9 @@ class DobotControl:
                     self.deplacer_vers_colonne_droite()
                     self.grab_pallet(5, grab=True)
                     time.sleep(1)
-                    self.grab_pallet(5, grab=False)
+                    self.grab_pallet(4, grab=False)
                 if(index == 1):
-                    self.deplacer_vers_colonne_centre(0)
+                    self.deplacer_vers_colonne_centre()
                     # Activer la ventouse pour ramasser
                     self.activate_ventouse(True)
                     time.sleep(1)
@@ -90,7 +90,7 @@ class DobotControl:
                     self.activate_ventouse(False)
 
                 if(index == 2):
-                    self.deplacer_vers_colonne_gauche(0)
+                    self.deplacer_vers_colonne_gauche()
                     # Activer la ventouse pour ramasser
                     self.activate_ventouse(True)
                     time.sleep(1)
@@ -105,13 +105,6 @@ class DobotControl:
             print(f"Une erreur s'est produite : {e}")
             self.device.close()
             self.connected = False
-
-    def detect_contact(self):
-        """
-        Détecte le contact avec une surface.
-        """
-        pose = self.get_pose()
-        return pose[2] < -90  # Seuil ajustable
 
     def move_to_and_check(self, x, y, z, r=0, wait=True):
         """
