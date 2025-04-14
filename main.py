@@ -61,21 +61,19 @@ def main():
 if __name__ == "__main__":
     main()
     
-
-#TODO: system: ajout thread simulation/interface + deplacement robot
-
 #TODO: robot: Commentaires !
 
 #TODO: vision: retirer le bruit sur les images
 #TODO: vision: methode deconnexion camera 
     
 #TODO: interface: methode deconnexion interface
+#TODO: interface: visualiser les photos detection
 #TODO: interface: ajouter la simulation à l'interface
     
-#TODO: test: Imaginer les tests unitaires
+#TODO: test: Imaginer les tests unitaires         
 #TODO: test: Imaginer les tests integrations
 
-#TODO: DOC: Conception detaillée
-#TODO: DOC: Planning réel
+#TODO: DOC: Conception detaillée     
+#TODO: DOC: Planning réel           
 #TODO: DOC: Slides Soutenance
 #TODO: README: Update du readme 
