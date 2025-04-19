@@ -7,11 +7,11 @@ import sys
 from BlocAlgo.HanoiIterative import HanoiIterative
 from BlocRobot.Filter_pydobot import FilterPydobotLogs
 
-H_PALET0   = -80
-H_PALET1   = -55
-H_PALET2   = -30
-H_PALET3   = -5
-H_PALET4   = 20
+H_PALET0   = -75 #-5
+H_PALET1   = -50 #-5
+H_PALET2   = -25 #-5
+H_PALET3   = 0 #-5
+H_PALET4   = 25 #+5
 H_PALET5   = 50
 AXE_DROITE = 150
 AXE_GAUCHE = -150
@@ -29,8 +29,10 @@ class DobotControl:
             raise RuntimeError("Aucun port disponible pour connecter le Dobot.")
         print(f'available ports: {[x.device for x in available_ports]}')
 
-        self.port = available_ports[4].device  # Choisir le port approprié
-        print(f"Connexion au port : {self.port}")
+        self.port = next((p.device for p in available_ports if "usbserial" in p.device or "usbmodem" in p.device), None)
+        if self.port is None:
+            raise RuntimeError("Aucun port USB série valide trouvé pour le Dobot.")
+        #print(f"Connexion au port : {self.port}")
         # Appliquer le filtre avant d'initialiser pydobot
         sys.stdout = FilterPydobotLogs(sys.stdout)
         self.device = pydobot.Dobot(port=self.port, verbose=True)
@@ -111,7 +113,7 @@ class DobotControl:
         self.device.move_to(self.cible_x, self.cible_y, H_BRAS_LEVE, r, wait)
 
     def grab_pallet(self, nb_palet, r=0, wait=True, grab=True):
-        print(f"Nombre de palets à saisir : {nb_palet}")
+        print(f"palets à saisir : {nb_palet}")
         #Saisir un palet.
         if(grab == False):
             nb_palet += 1;  # Ajout du palet à déposer
@@ -183,17 +185,22 @@ class DobotControl:
     def move_vertical_switch(self, nb_palet):
         match nb_palet:
             case 0:
-                print(f"nb palet sur axe 0 \n hauteur = ")
+                print(f"H= {H_PALET0}")
                 self.cible_z = H_PALET0
             case 1:
+                print(f"H= {H_PALET1}")
                 self.cible_z = H_PALET1
             case 2:
+                print(f"H= {H_PALET2}")
                 self.cible_z = H_PALET2
             case 3:
+                print(f"H= {H_PALET3}")
                 self.cible_z = H_PALET3
             case 4:
+                print(f"H= {H_PALET4}")
                 self.cible_z = H_PALET4
             case 5:
+                print(f"H= {H_PALET5}")
                 self.cible_z = H_PALET5
             case _:
                 raise ValueError(self.ERROR_INVALID_PALLET_COUNT)
