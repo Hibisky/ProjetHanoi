@@ -1,0 +1,22 @@
+flowchart LR
+CAMERA[Caméra]
+MAIN[Main]
+ROBOT[Robot]
+INTERFACE[Interface]
+ALGO[Algorithme]
+ 
+MAIN -->|1a.init| CAMERA
+%%CAMERA -->|1a.init OK| MAIN
+ 
+MAIN -->|1b.init| ROBOT
+%%ROBOT -->|1a.init OK| MAIN
+ 
+MAIN -->|1c.init| INTERFACE
+%%INTERFACE -->|1a.init OK| MAIN
+ 
+CAMERA -->|nb_palet ?| INTERFACE
+USER -->|nb_palet validé| INTERFACE
+INTERFACE -->|nb_palet validé| ALGO
+ 
+%%MAIN -->|nb_palet validé| ALGO
+ALGO -->|matrice déplacement| ROBOT
