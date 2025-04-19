@@ -61,27 +61,19 @@ def main():
 if __name__ == "__main__":
     main()
     
-
-#TODO: algo/Généré les données en transit
-
-#TODO: system: ajout thread simulation/interface + deplacement robot
-
-#TODO: robot: afficher l'etage a lequel il pose le palet et il retire le palet
-#TODO: robot: ajout de trace pour comprendre deplacement hauteur
-#TODO: robot: resoudre pb initialisation et hauteur 
 #TODO: robot: Commentaires !
 
 #TODO: vision: retirer le bruit sur les images
-#TODO: vision: disier par 2 le compte pour avoir le bon nb de palet
 #TODO: vision: methode deconnexion camera 
     
 #TODO: interface: methode deconnexion interface
+#TODO: interface: visualiser les photos detection
 #TODO: interface: ajouter la simulation à l'interface
     
-#TODO: test: Imaginer les tests unitaires
+#TODO: test: Imaginer les tests unitaires         
 #TODO: test: Imaginer les tests integrations
 
-#TODO: DOC: Conception detaillée
-#TODO: DOC: Planning réel
+#TODO: DOC: Conception detaillée     
+#TODO: DOC: Planning réel           
 #TODO: DOC: Slides Soutenance
 #TODO: README: Update du readme 
