@@ -8,7 +8,7 @@ from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import QMessageBox
 import numpy as np
 
-from CameraProcessor import CameraProcessor
+from BlocVision.CameraProcessor import CameraProcessor
 import time
 
 class InitialConfigWindow(QWidget):
@@ -163,12 +163,13 @@ class DetectionInterface:
             if self.show_images:
                 self.show_image_steps(steps)
 
-            self.show_validation_dialog()
+            validated_count = self.show_validation_dialog()
+            return validated_count
         else:
             print("Erreur lors de la capture d’image.")
 
 
 if __name__ == "__main__":
-    image_path = "/Users/boblabrike/Desktop/step_0_raw.png"
+    image_path = "detections/detection_1742838667/step_0_raw.png"
     interface = DetectionInterface()
     interface.run_detection_workflow(image_path=image_path)

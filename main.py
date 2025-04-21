@@ -23,6 +23,9 @@ def main():
     print("Initialisation de la caméra...")
     processor = CameraProcessor()
 
+    print("Initialisation de l'interface...")
+    interface = DetectionInterface()
+
     # === 2. ACQUISITION DE L'ÉTAT INITIAL ===
     print("Prise de photo pour analyser la tour d'origine...")
     frame = processor.capture_image()
@@ -33,8 +36,8 @@ def main():
         print(f"Nombre de palets détectés : {num_discs}")
     
     #On valide mtn le nombre de palets par l'utilisateur 
-    interface = DetectionInterface(num_discs)
-    validated_count = interface.show_interface()
+    #interface = DetectionInterface(num_discs)
+    validated_count = interface.run_detection_workflow()
 
 
     # === 3. CALCUL DES DÉPLACEMENTS SELON L'ALGORITHME DE HANOÏ ===
@@ -55,6 +58,9 @@ def main():
     print("Résolution de la Tour de Hanoï terminée !")
     robot.return_to_home()
     robot.disconnect()
+
+    # === 5.FIN DU PROGRAMME ===
+
     print("Program End.")
     sys.exit(app.exec())
 
