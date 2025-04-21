@@ -67,15 +67,14 @@ def main():
 if __name__ == "__main__":
     main()
     
-
 #TODO: robot: Commentaires !
 
 #TODO: vision: retirer le bruit sur les images
-#TODO: vision: methode deconnexion camera 
+#TODO: vision: methode deconnexion camera
     
 #TODO: interface: methode deconnexion interface
 #TODO: interface: ajouter la simulation à l'interface NOT NECESSARY
 
 #TODO: DOC: Planning réel
 #TODO: DOC: Slides Soutenance
-#TODO: README: Update du readme 
+#TODO: README: Update du readme
