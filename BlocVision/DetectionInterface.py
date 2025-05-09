@@ -87,6 +87,11 @@ class DetectionInterface:
         self.save_images = False
         self.show_images = False
 
+    def __del__(self):
+        print("Interface de détection détruite.")
+        if self.processor:
+            del self.processor  
+
     def show_cancel_message(self, message="Action annulée par l'utilisateur."):
         app = QApplication.instance()
         if not app:
@@ -148,16 +153,17 @@ class DetectionInterface:
     def run_detection_workflow(self, image_path: str = None):
         self.show_initial_config()
 
-        processor = CameraProcessor(save_images=self.save_images, show_images=self.show_images)
+        self.processor = CameraProcessor(save_images=self.save_images, show_images=self.show_images)
+
         if image_path:
-            frame = processor.load_image_from_file(image_path)
+            frame = self.processor.load_image_from_file(image_path)
         else:
-            frame = processor.capture_image()
+            frame = self.processor.capture_image()
 
 
         if frame is not None:
             detection_id = int(time.time())
-            num_discs, steps = processor.detect_discs(frame, detection_id)
+            num_discs, steps = self.processor.detect_discs(frame, detection_id)
             self.detected_count = num_discs
 
             if self.show_images:
@@ -172,4 +178,4 @@ class DetectionInterface:
 if __name__ == "__main__":
     image_path = "detections/detection_1742838667/step_0_raw.png"
     interface = DetectionInterface()
-    interface.run_detection_workflow(image_path=image_path)
+    interface.run_detection_workflow()

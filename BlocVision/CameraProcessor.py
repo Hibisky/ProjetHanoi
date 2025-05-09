@@ -13,29 +13,37 @@ class CameraProcessor:
         self.camera_index = camera_index
         self.save_images = save_images
         self.show_images = show_images
-
+        self.cap = None
         
+    def __del__(self):
+        if self.cap is not None and self.cap.isOpened():
+            self.cap.release()
+            print("Ressource caméra libérée via __del__")
+
     def load_image_from_file(self, path):
         frame = cv2.imread(path)
         if frame is None or not np.any(frame):
             print(f"Erreur : impossible de charger l’image depuis {path}")
             return None
         return frame
-
+    
     def capture_image(self):
-        cap = cv2.VideoCapture(self.camera_index)
+        self.cap = cv2.VideoCapture(self.camera_index)
         time.sleep(1)
 
         frame = None
         for _ in range(5):
-            ret, frame = cap.read()
+            ret, frame = self.cap.read()
             if not ret or frame is None:
                 print("Erreur : Impossible de capturer une image valide.")
-                cap.release()
+                self.cap.release()
+                self.cap = None
                 return None
 
-        cap.release()
+        self.cap.release()
+        self.cap = None
         return frame if np.any(frame) else None
+
 
     def detect_discs(self, frame, detection_id):
         folder_name = f"detections/detection_{detection_id}"
