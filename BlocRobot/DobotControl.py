@@ -1,24 +1,27 @@
 #!/usr/bin/env python
 
 import time
+import threading
 from serial.tools import list_ports
 import pydobot
+from pydobot.message import Message
+from pydobot.enums.CommunicationProtocolIDs import CommunicationProtocolIDs
 import sys
 from BlocAlgo.HanoiIterative import HanoiIterative
 from BlocRobot.Filter_pydobot import FilterPydobotLogs
-import DobotCalibrate as DobotCalibrator
+import BlocRobot.DobotCalibrate as DobotCalibrator
 from PyQt6.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QLabel
 
-H_PALET0   = -75 #-5
-H_PALET1   = -50 #-5
-H_PALET2   = -25 #-5
-H_PALET3   = 0 #-5
-H_PALET4   = 25 #+5
-H_PALET5   = 50
+H_PALET0   = -82
+H_PALET1   = -55 
+H_PALET2   = -30 
+H_PALET3   = -5 
+H_PALET4   = 20 
+H_PALET5   = 45
 AXE_DROITE = 150
 AXE_GAUCHE = -150
 AXE_CENTRE = 0
-H_BRAS_LEVE = 150
+H_BRAS_LEVE = 155
 DIST_COLONNES = 220
 
 
@@ -27,7 +30,7 @@ class DobotControl:
     Classe pour contrôler le robot Dobot.
     """
     
-    def __init__(self, home_x=220, home_y=0, home_z=100):
+    def __init__(self, home_x=220, home_y=-7, home_z=100):
         """
         Initialise le DobotControl avec les coordonnées de la position de départ.
         :param home_x: Coordonnée x de la position de départ.
@@ -43,14 +46,30 @@ class DobotControl:
             raise RuntimeError("Aucun port disponible pour connecter le Dobot.")
         print(f'available ports: {[x.device for x in available_ports]}')
 
-        self.port = next((p.device for p in available_ports if "usbserial" in p.device or "usbmodem" in p.device), None)
+        self.port = None
+        timeout = 5  # Timeout de 10 secondes pour la connexion
+        for port in available_ports:
+            try:
+                print(f"Test de connexion au port : {port.device}")
+                # Essayez d'initialiser le Dobot sur ce port
+                test_device = self.try_connect_dobot(port, timeout=timeout)
+                test_device.close()  # Si la connexion réussit, fermez-la immédiatement
+                self.port = port.device
+                print(f"✅ Port valide trouvé : {self.port}")
+                break
+            except RuntimeError as e:
+                print(f"❌ Échec de connexion au port {port.device}: Timeout dépassé")  # Timeout atteint pour ce port
+            except Exception as e:
+                print(f"❌ Échec de connexion au port {port.device}")
+
         if self.port is None:
             raise RuntimeError("Aucun port USB série valide trouvé pour le Dobot.")
-        #print(f"Connexion au port : {self.port}")
-        # Appliquer le filtre avant d'initialiser pydobot
-        sys.stdout = FilterPydobotLogs(sys.stdout)
-        self.device = pydobot.Dobot(port=self.port, verbose=True)
-        self.connected = True
+        else:
+            # Initialisez le Dobot avec le port trouvé
+            sys.stdout = FilterPydobotLogs(sys.stdout)
+            self.device = pydobot.Dobot(port=self.port, verbose=True)
+            self.connected = True
+            time.sleep(1) # Attendre que le Dobot soit prêt
         # Cible initiale
         self.home_x = home_x
         self.home_y = home_y
@@ -60,16 +79,51 @@ class DobotControl:
         self.cible_z = 0
         self.CALIB_Y = 0
         self.CALIB_Z = 0
+
         # Patch si la méthode n'existe pas
         if not hasattr(self.device, 'home'):
+            print("Ajout de la méthode home au Dobot")
             self._patch_home()
         
         # Va à la position home
+        print("Déplacement vers la position home...")
         self.device.home()
         
         # Se repositionner à home après calibration
+        print("Repositionnement à la position home...")
         self.move_to_and_check(self.home_x, self.home_y, self.home_z)
         self.device.move_to(home_x, home_y, home_z, 0, True)
+
+    def try_connect_dobot(self, port, timeout=5):
+        """
+        Tente de se connecter au Dobot sur un port donné avec un timeout.
+        :param port: Port série à tester.
+        :param timeout: Durée maximale en secondes pour la tentative.
+        :return: Instance Dobot si la connexion réussit, sinon lève une exception.
+        """
+        result = [None]  # Utilisation d'une liste mutable pour stocker le résultat dans le thread
+        exception = [None]
+
+        def connect():
+            try:
+                result[0] = pydobot.Dobot(port=port.device, verbose=False)
+            except Exception as e:
+                exception[0] = e
+
+        # Lancer la connexion dans un thread séparé
+        thread = threading.Thread(target=connect)
+        thread.start()
+        thread.join(timeout)  # Attendre jusqu'à ce que le thread termine ou que le timeout soit atteint
+
+        if thread.is_alive():
+            # Si le thread est toujours actif après le timeout, on lève une exception
+            raise RuntimeError(f"⏳ Timeout atteint pour la connexion au port {port.device}.")
+        if exception[0]:
+            # Si une exception a été levée dans le thread, on la relance
+            raise exception[0]
+
+        thread.join()  # Assurez-vous que le thread est terminé avant de continuer
+        return result[0]
 
     def execute_init(self):
         
@@ -79,7 +133,7 @@ class DobotControl:
 
                 # Mouvement au-dessus de la position
                 if(index == 0):
-                    self.deplacer_vers_colonne_droite()
+                    self.deplacer_vers_colonne_gauche()
                     self.grab_pallet(5, grab=True)
                     time.sleep(1)
                     self.grab_pallet(4, grab=False)
@@ -92,7 +146,7 @@ class DobotControl:
                     self.activate_ventouse(False)
 
                 if(index == 2):
-                    self.deplacer_vers_colonne_gauche()
+                    self.deplacer_vers_colonne_droite()
                     # Activer la ventouse pour ramasser
                     self.activate_ventouse(True)
                     time.sleep(1)
@@ -113,7 +167,7 @@ class DobotControl:
         Déplace le Dobot et vérifie la position.
         """
         self.device.move_to(x, y, z, r, wait)
-        time.sleep(0.5)
+        time.sleep(0.3)
         
         pose = self.get_pose()
         if abs(pose[0] - x) > 2 or abs(pose[1] - y) > 2 or abs(pose[2] - z) > 2:
@@ -234,6 +288,10 @@ class DobotControl:
 
     def __del__(self):
         """Destructeur pour deconnecter proprement."""
+        if threading.current_thread() is not threading.main_thread():
+            threading.currentThread().join()
+            print("Destruction de l'objet DobotControl.")
+        self.connected = False
         self.disconnect()
 
     def deplacer_vers_axe(self,axe_id):
@@ -302,23 +360,21 @@ class DobotControl:
         """
         Ajoute une méthode home à l'instance pydobot.Dobot, avec attente de fin de mouvement.
         """
-        def dobot_home(_self, timeout=10):
+        def dobot_home(_self, timeout=25):
             """
             Déplace le robot à la position home et attend la fin du mouvement.
             :param timeout: Temps d'attente maximum pour le mouvement.
             """
-            print("🏠 Exécution de la commande Home (code 31)...")
-            _self._send_command(31)
+            print("🏠 Exécution de la commande Home (code SET_HOME_CMD)...")
+            msg = Message()
+            msg.id = CommunicationProtocolIDs.SET_HOME_CMD
+            _self._send_command(msg)
 
             # Attente active que le robot ait terminé (polling)
             start_time = time.time()
             while True:
-                pose = _self.pose()
-                if abs(pose[0] - self.home_x) < 2 and abs(pose[1] - self.home_y) < 2:
-                    print("✅ Mouvement Home terminé.")
-                    break
                 if time.time() - start_time > timeout:
-                    print("⚠️ Timeout atteint, Home non confirmé.")
+                    print("⚠️ Timeout atteint.")
                     break
                 time.sleep(0.2)  # petite pause pour éviter de spammer le port série
 
@@ -328,11 +384,10 @@ class DobotControl:
 
 if __name__ == "__main__":
     robot = DobotControl()
-    robot.calibrer_manuellement()
-    print(f"Phase d'initialisation du robot...")
+    print("Phase d'initialisation du robot...")
     robot.execute_init()
     
-    print(f"Phase de résolution de la Tour de Hanoï...")
+    print("Phase de résolution de la Tour de Hanoï...")
     hanoi = HanoiIterative(4)  # Initialisation avec 4 disques
 
     # Boucle pour exécuter les mouvements de la matrice

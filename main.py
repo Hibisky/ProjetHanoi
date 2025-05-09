@@ -1,12 +1,13 @@
 import sys
 from PyQt6.QtWidgets import QApplication
 import time
+import threading
 from BlocAlgo.HanoiIterative import HanoiIterative
 from BlocAlgo.SimulationMoves import SimulationMoves
 from BlocVision.CameraProcessor import CameraProcessor
 from BlocVision.DetectionInterface import DetectionInterface
-
 from BlocRobot.DobotControl import DobotControl
+import signal
 
 def main():
     """
@@ -21,6 +22,7 @@ def main():
     robot.execute_init()
 
     print("Initialisation de la caméra...")
+    robot.move_to_and_check(220, -100, 155)
     processor = CameraProcessor()
 
     # === 2. ACQUISITION DE L'ÉTAT INITIAL ===
@@ -57,9 +59,29 @@ def main():
     robot.disconnect()
     print("Program End.")
     sys.exit(app.exec())
+    exit(0)
+
+def signal_handler(sig, frame):
+    """
+    Gestionnaire pour les signaux système (ex. Ctrl + C).
+    """
+    print("\n🔴 Interruption reçue. Arrêt du programme...")
+    sys.exit(0)
+
+def __del__():
+    """
+    Méthode de nettoyage pour libérer les ressources.
+    """
+    # Arrêter le main
+    print("Arrêt du programme...")
+    sys.exit(0)
 
 if __name__ == "__main__":
+    # Capture des signaux système (ex. Ctrl + C)
+    signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGTERM, signal_handler)
     main()
+    sys.exit(0)
     
 #TODO: robot: Commentaires !
 

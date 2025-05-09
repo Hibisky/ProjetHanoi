@@ -1,5 +1,5 @@
 import logging
-from Filtrer_analyseAlgo import AnalyseAlgo
+from BlocAlgo.Filtrer_analyseAlgo import AnalyseAlgo
 
 class HanoiIterative:
     def __init__(self, nb_palet_camera):
