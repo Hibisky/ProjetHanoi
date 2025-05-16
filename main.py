@@ -25,6 +25,9 @@ def main():
     robot.move_to_and_check(220, -100, 155)
     processor = CameraProcessor()
 
+    print("Initialisation de l'interface...")
+    interface = DetectionInterface()
+
     # === 2. ACQUISITION DE L'ÉTAT INITIAL ===
     print("Prise de photo pour analyser la tour d'origine...")
     frame = processor.capture_image()
@@ -35,8 +38,8 @@ def main():
         print(f"Nombre de palets détectés : {num_discs}")
     
     #On valide mtn le nombre de palets par l'utilisateur 
-    interface = DetectionInterface(num_discs)
-    validated_count = interface.show_interface()
+    #interface = DetectionInterface(num_discs)
+    validated_count = interface.run_detection_workflow()
 
 
     # === 3. CALCUL DES DÉPLACEMENTS SELON L'ALGORITHME DE HANOÏ ===
@@ -57,6 +60,9 @@ def main():
     print("Résolution de la Tour de Hanoï terminée !")
     robot.return_to_home()
     robot.disconnect()
+
+    # === 5.FIN DU PROGRAMME ===
+
     print("Program End.")
     sys.exit(app.exec())
     exit(0)
@@ -86,16 +92,11 @@ if __name__ == "__main__":
 #TODO: robot: Commentaires !
 
 #TODO: vision: retirer le bruit sur les images
-#TODO: vision: methode deconnexion camera 
+#TODO: vision: methode deconnexion camera
     
 #TODO: interface: methode deconnexion interface
-#TODO: interface: visualiser les photos detection
-#TODO: interface: ajouter la simulation à l'interface
-    
-#TODO: test: Imaginer les tests unitaires         
-#TODO: test: Imaginer les tests integrations
+#TODO: interface: ajouter la simulation à l'interface NOT NECESSARY
 
-#TODO: DOC: Conception detaillée     
-#TODO: DOC: Planning réel           
+#TODO: DOC: Planning réel
 #TODO: DOC: Slides Soutenance
-#TODO: README: Update du readme 
+#TODO: README: Update du readme
