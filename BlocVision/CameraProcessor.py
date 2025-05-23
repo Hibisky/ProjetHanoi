@@ -157,6 +157,16 @@ class CameraProcessor:
         circularity = (4 * np.pi * area) / (perimeter ** 2)
         return circularity > CIRCULARITY_MIN
 
+    def __del__(self):
+        """
+        Libère la caméra si elle est ouverte.
+        """
+        if self.cap is not None and self.cap.isOpened():
+            self.cap.release()
+            print("Ressource caméra libérée via __del__")
+        # Terminer le prgogramme et la commande du terminal
+        os.system("pkill -f 'python -m PyQt6'")
+
 
 # Si ce fichier est exécuté directement, il lance une détection simple à partir d'une image disque
 if __name__ == "__main__":

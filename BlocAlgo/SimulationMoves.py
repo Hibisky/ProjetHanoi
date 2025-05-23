@@ -7,13 +7,14 @@ from BlocAlgo.HanoiIterative import HanoiIterative
 
 class SimulationMoves(QWidget):
 
-    def __init__(self, algorithm):
+    def __init__(self, algorithm, qapplication):
         """
         Initialise la fenêtre de simulation de la Tour de Hanoï.
 
         :param algorithm: HanoiIterative - Instance de l'algorithme contenant la solution.
         """
         super().__init__()
+        self.qapplication = qapplication
         self.algorithm = algorithm
         self.tower_positions = [100, 300, 500]  # Positions des tours sur l'interface graphique
         self.palet_widths = [80, 70, 60, 50, 40][:self.algorithm.nb_palet_camera]  # Largeur des palets
@@ -88,6 +89,38 @@ class SimulationMoves(QWidget):
                         280 - j * 20, 
                         self.palet_widths[palet_index], 20
                     )
+
+        # Connecter le signal de fermeture de la fenêtre à la méthode __closeEvent
+        self.closeEvent = self.__closeEvent
+
+    def __closeEvent(self, event):
+        """
+        Gère la fermeture de la fenêtre de simulation.
+
+        :param event: QCloseEvent - Événement de fermeture de la fenêtre.
+        :return: Aucun (ferme l'application).
+        """
+        self.timer.stop()
+        event.accept()
+        print("Simulation fermée.")
+        self.close()
+        # Ferme l'application proprement
+        self.qapplication
+        if self.qapplication:
+            self.qapplication.quit()
+        else:
+            print("Aucune instance d'application PyQt6 en cours.")
+
+    def __del__(self):
+        """
+        Méthode de nettoyage pour libérer les ressources.
+        """
+        print("SimulationMoves détruite.")
+        self.timer.stop()
+        if self.qapplication:
+            self.qapplication.quit()
+        else:
+            print("Aucune instance d'application PyQt6 en cours.")
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)

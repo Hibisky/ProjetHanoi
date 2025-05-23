@@ -8,7 +8,7 @@ from PyQt6.QtCore import Qt
 import numpy as np
 import time
 
-from CameraProcessor import CameraProcessor  # Classe de traitement d'image
+from BlocVision.CameraProcessor import CameraProcessor  # Classe de traitement d'image
 
 # Fenêtre de configuration initiale (affichage et sauvegarde d'images)
 class InitialConfigWindow(QWidget):
@@ -100,7 +100,11 @@ class MultiImageViewer(QWidget):
 
 # Interface principale de détection
 class DetectionInterface:
-    def __init__(self):
+    def __init__(self, qapplication=None):
+        if qapplication is None:
+            self.app = qapplication(sys.argv)
+        else:
+            self.app = QApplication.instance()
         self.detected_count = 0     # Nombre de palets détectés
         self.validated_count = 0    # Nombre de palets validés par l'utilisateur
         self.save_images = False
@@ -109,26 +113,23 @@ class DetectionInterface:
 
     # Méthode appelée à la destruction de l'objet (nettoyage)
     def __del__(self):
-        print("Interface de détection détruite.")
-        if self.processor:
+        if self.processor is not None:
             del self.processor
+            print("Ressource caméra libérée via __del__")
+        else:
+            print("Aucune instance de CameraProcessor à libérer.")
 
     # Affiche un message d’annulation
     def show_cancel_message(self, message="Action annulée par l'utilisateur."):
-        app = QApplication.instance()
-        if not app:
-            app = QApplication(sys.argv)
         QMessageBox.information(None, "Annulation", message)
+        self.app.quit()  # Quitte l'application proprement
 
     # Affiche la fenêtre de configuration initiale
     def show_initial_config(self):
-        app = QApplication.instance()
-        if not app:
-            app = QApplication(sys.argv)
 
         config_window = InitialConfigWindow()
         config_window.show()
-        app.exec()  # Bloc jusqu'à fermeture
+        self.app.exec()  # Bloc jusqu'à fermeture
 
         if not config_window.config_confirmed:
             self.show_cancel_message("Configuration annulée par l'utilisateur.")
@@ -140,10 +141,6 @@ class DetectionInterface:
 
     # Affiche une boîte de dialogue pour valider le nombre de palets
     def show_validation_dialog(self):
-        app = QApplication.instance()
-        if not app:
-            app = QApplication(sys.argv)
-
         user_input, ok = QInputDialog.getInt(
             None, "Validation",
             f"Nombre de palets détectés : {self.detected_count}\n"
@@ -159,20 +156,18 @@ class DetectionInterface:
                 "Annulation",
                 "Validation annulée par l'utilisateur."
             )
-            raise RuntimeError("Validation annulée.")
+            self.app.quit()  # Quitte l'application proprement
+            sys.exit(0)  # Quitte l'application proprement
+            return -1
 
         print(f"Nombre de palets validé par l'utilisateur : {self.validated_count}")
         return self.validated_count
 
     # Affiche les étapes du traitement d’image
     def show_image_steps(self, images):
-        app = QApplication.instance()
-        if not app:
-            app = QApplication(sys.argv)
-
         viewer = MultiImageViewer(images)
         viewer.show()
-        app.exec()
+        self.app.exec()
 
     # Méthode principale : exécute tout le processus de détection
     def run_detection_workflow(self, image_path: str = None):
@@ -196,7 +191,11 @@ class DetectionInterface:
                 self.show_image_steps(steps)
 
             validated_count = self.show_validation_dialog()
-            return validated_count
+            if validated_count == -1:
+                self.show_cancel_message("Annulation de la validation.")
+                return -1
+            else:
+                return validated_count
         else:
             print("Erreur lors de la capture d’image.")
 

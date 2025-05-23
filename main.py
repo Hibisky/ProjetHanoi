@@ -1,5 +1,5 @@
 import sys
-from PyQt6.QtWidgets import QApplication
+from PyQt6.QtWidgets import QApplication, QMessageBox
 import time
 import threading
 from BlocAlgo.HanoiIterative import HanoiIterative
@@ -19,17 +19,31 @@ def main():
     # === 1. INITIALISATION DES COMPOSANTS === 
     print("Initialisation du robot...")
     robot = DobotControl()  # Création de l'instance du robot
-    robot.execute_init()
+    #robot.execute_init()
 
     print("Initialisation de la caméra...")
-    robot.move_to_and_check(220, -100, 155)
-    processor = CameraProcessor()
+    robot.move_to_and_check(220, -150, 155)
+    app = QApplication(sys.argv)
+    reply = QMessageBox.information(
+        None,
+        "Initialisation de la caméra",
+        "Voulez-vous lancer l'initialisation de la caméra ?",
+        QMessageBox.StandardButton.Ok | QMessageBox.StandardButton.Cancel
+    )
+    if reply == QMessageBox.StandardButton.Cancel:
+        print("Initialisation de la caméra annulée par l'utilisateur.")
+        robot.disconnect()
+        sys.exit(app.exec())
+        exit(0)
 
     print("Initialisation de l'interface...")
-    interface = DetectionInterface()
+    interface = DetectionInterface(app)
 
     # === 2. ACQUISITION DE L'ÉTAT INITIAL ===
     print("Prise de photo pour analyser la tour d'origine...")
+    robot.move_to_and_check(230, -90, 155)
+    time.sleep(2)
+    processor = CameraProcessor()
     frame = processor.capture_image()
 
     if frame is not None:
@@ -40,16 +54,22 @@ def main():
     #On valide mtn le nombre de palets par l'utilisateur 
     #interface = DetectionInterface(num_discs)
     validated_count = interface.run_detection_workflow()
+    if validated_count == -1:
+        print("Annulation de la validation.")
+        robot.disconnect()
+        sys.exit(0)
+        exit(0)
 
 
     # === 3. CALCUL DES DÉPLACEMENTS SELON L'ALGORITHME DE HANOÏ ===
     print("Calcul des déplacements...")
+    robot.move_to_and_check(220, -150, 155)
     algo = HanoiIterative(validated_count)# Génération de la liste des déplacements
 
     # === 4. EXECUTION DES DEPLACEMENTS PAR LA SIMULATION ===
-    app = QApplication(sys.argv)
-    simulation = SimulationMoves(algo)
+    simulation = SimulationMoves(algo, app)
     simulation.show()
+    app.exec()  # Lancement de l'application PyQt pour la simulation
 
     # === 4. EXÉCUTION DES DÉPLACEMENTS PAR LE ROBOT ===
 
@@ -64,7 +84,7 @@ def main():
     # === 5.FIN DU PROGRAMME ===
 
     print("Program End.")
-    sys.exit(app.exec())
+    sys.exit(0)
     exit(0)
 
 def signal_handler(sig, frame):
@@ -81,6 +101,7 @@ def __del__():
     # Arrêter le main
     print("Arrêt du programme...")
     sys.exit(0)
+    exit(0)
 
 if __name__ == "__main__":
     # Capture des signaux système (ex. Ctrl + C)
