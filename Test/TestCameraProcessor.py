@@ -5,7 +5,7 @@ import os
 import shutil
 import time
 from unittest import mock
-from CameraProcessor import CameraProcessor
+from BlocVision.CameraProcessor import CameraProcessor
 
 class TestCameraProcessor(unittest.TestCase):
     def setUp(self):
