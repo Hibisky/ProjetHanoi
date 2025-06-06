@@ -3,9 +3,9 @@ from PyQt6.QtWidgets import QApplication, QMessageBox
 import time
 import threading
 from BlocAlgo.HanoiIterative import HanoiIterative
-from BlocAlgo.SimulationMoves import SimulationMoves
+from BlocInterface.SimulationMoves import SimulationMoves
 from BlocVision.CameraProcessor import CameraProcessor
-from BlocVision.DetectionInterface import DetectionInterface
+from BlocInterface.DetectionInterface import DetectionInterface
 from BlocRobot.DobotControl import DobotControl
 import signal
 
